@@ -15,7 +15,7 @@ namespace SimpleBot
         }
 
         public ConversationState ConversationState { get; }
-        public IStatePropertyAccessor<PictureBotState> BotState { get; set; }
+        public IStatePropertyAccessor<PictureBotState> PictureBotState { get; set; }
         public IStatePropertyAccessor<DialogState> DialogStateAccessor { get; set; }
     }
 }

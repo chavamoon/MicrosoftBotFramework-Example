@@ -10,5 +10,6 @@ namespace SimpleBot
         public string Greeted { get; set; } = "not greeted";
         public string Search { get; set; } = "";
         public string Searching { get; set; } = "no";
+        public List<string> UtteranceList { get; private set; } = new List<string>();
     }
 }

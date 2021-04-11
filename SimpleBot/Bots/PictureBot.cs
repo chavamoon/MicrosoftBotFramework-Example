@@ -61,6 +61,14 @@ namespace SimpleBot.Bots
             // Add search related tasks
         }
 
+        public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            //Save utterances in storage as bot state
+            var utterance = turnContext.Activity.Text;
+            var state = await _accessors.PictureBotState.GetAsync(turnContext, () => new PictureBotState());
+            state.UtteranceList.Add(utterance);
+            await _accessors.ConversationState.SaveChangesAsync(turnContext);
+        }
 
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
@@ -98,7 +106,7 @@ namespace SimpleBot.Bots
         private async Task<DialogTurnResult> GreetingAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             // Get the state for the current step in the conversation
-            var state = await _accessors.BotState.GetAsync(stepContext.Context, () => new PictureBotState());
+            var state = await _accessors.PictureBotState.GetAsync(stepContext.Context, () => new PictureBotState());
 
             // If we haven't greeted the user
             if (state.Greeted == "not greeted")
@@ -131,7 +139,7 @@ namespace SimpleBot.Bots
         public async Task<DialogTurnResult> MainMenuAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             // Check if we are currently processing a user's search
-            var state = await _accessors.BotState.GetAsync(stepContext.Context);
+            var state = await _accessors.PictureBotState.GetAsync(stepContext.Context);
 
             // If Regex picks up on anything, store it
             var recognizedIntents = stepContext.Context.TurnState.Get<IRecognizedIntents>();

@@ -56,7 +56,7 @@ namespace SimpleBot
                 // State accessors enable other components to read and write individual properties of state.
                 return new PictureBotAccessors(conversationState)
                 {
-                    BotState = conversationState.CreateProperty<PictureBotState>(nameof(PictureBotState)),
+                    PictureBotState = conversationState.CreateProperty<PictureBotState>(nameof(PictureBotState)),
                     DialogStateAccessor = conversationState.CreateProperty<DialogState>(nameof(DialogState)),
                 };
 
