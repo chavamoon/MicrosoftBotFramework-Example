@@ -6,12 +6,15 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using SimpleBot.Bots;
+using SimpleBot.Middleware;
+using System.Text.RegularExpressions;
 
 namespace SimpleBot
 {
@@ -33,7 +36,53 @@ namespace SimpleBot
             services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>();
 
             // Create the bot as a transient. In this case the ASP Controller is expecting an IBot.
-            services.AddTransient<IBot, EchoBot>();
+            //Configuring bot middleware
+            services.AddBot<PictureBot>(options =>
+            {
+                var middleware = options.Middleware;
+                //Middleware regular expressions
+                middleware.Add(new RegExpRecognizerMiddleware()
+                    .AddIntent("search", new Regex("search picture(?:s)*(.*)|search pic(?:s)*(.*)", RegexOptions.IgnoreCase))
+                    .AddIntent("share", new Regex("share picture(?:s)*(.*)|share pic(?:s)*(.*)", RegexOptions.IgnoreCase))
+                    .AddIntent("order", new Regex("order picture(?:s)*(.*)|order print(?:s)*(.*)|order pic(?:s)*(.*)", RegexOptions.IgnoreCase))
+                    .AddIntent("help", new Regex("help(.*)", RegexOptions.IgnoreCase)));
+            });
+            //Configuring bot custo accessors for managing bot state
+            services.AddSingleton<PictureBotAccessors>(sp => 
+            {
+                var conversationState = sp.GetRequiredService<ConversationState>();
+                    
+                // Create the custom state accessor.
+                // State accessors enable other components to read and write individual properties of state.
+                return new PictureBotAccessors(conversationState)
+                {
+                    BotState = conversationState.CreateProperty<PictureBotState>(nameof(PictureBotState)),
+                    DialogStateAccessor = conversationState.CreateProperty<DialogState>(nameof(DialogState)),
+                };
+
+            });
+
+            //Configuring state
+            // Create the User state.
+            services.AddSingleton<UserState>(sp => {
+                var dataStore = sp.GetRequiredService<IStorage>();
+                return new UserState(dataStore);
+            });
+
+            // Create the Conversation state.
+            services.AddSingleton<ConversationState>(sp =>
+            {
+                var dataStore = sp.GetRequiredService<IStorage>();
+                return new ConversationState(dataStore);
+            });
+
+            // Create the IStorage. (this case memory storate)
+            services.AddSingleton<IStorage, MemoryStorage>(sp =>
+            {
+                return new MemoryStorage();
+            });
+
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -45,6 +94,7 @@ namespace SimpleBot
             }
 
             app.UseDefaultFiles()
+                .UseBotFramework()
                 .UseStaticFiles()
                 .UseWebSockets()
                 .UseRouting()
