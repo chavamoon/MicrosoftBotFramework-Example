@@ -4,6 +4,7 @@
 // Generated with Bot Builder V4 SDK Template for Visual Studio EchoBot v4.12.2
 
 using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.AI.Luis;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
@@ -20,15 +21,17 @@ namespace SimpleBot.Bots
         private readonly PictureBotAccessors _accessors;       
         private readonly ILogger _logger;
         private DialogSet _dialogs;
+        private LuisRecognizer _recognizer { get; } = null;
 
 
-        public PictureBot(PictureBotAccessors accessors, ILoggerFactory loggerFactory)
+        public PictureBot(PictureBotAccessors accessors, ILoggerFactory loggerFactory, LuisRecognizer recognizer)
         {
           
             _logger = loggerFactory.CreateLogger<PictureBot>();
             _logger.LogTrace("PictureBot turn start.");
 
             // The DialogSet needs a DialogState accessor, it will call it when it has a turn context.
+            _recognizer = recognizer;
             _accessors = accessors;
             _dialogs = new DialogSet(_accessors.DialogStateAccessor);
 
@@ -146,9 +149,7 @@ namespace SimpleBot.Bots
             // Based on the recognized intent, direct the conversation
             switch (recognizedIntents.TopIntent?.Name)
             {
-                case "search":
-                    // switch to the search dialog
-                    return await stepContext.BeginDialogAsync("searchDialog", null, cancellationToken);
+
                 case "share":
                     // respond that you're sharing the photo
                     await MainResponses.ReplyWithShareConfirmation(stepContext.Context);
@@ -163,7 +164,39 @@ namespace SimpleBot.Bots
                     return await stepContext.EndDialogAsync();
                 default:
                     {
-                        await MainResponses.ReplyWithConfused(stepContext.Context);
+                        var result = await _recognizer.RecognizeAsync(stepContext.Context, cancellationToken);
+                        var topintent = result?.GetTopScoringIntent();
+                        switch((topintent != null)? topintent.Value.intent : null )
+                        {
+                            case null:
+                                await MainResponses.ReplyWithConfused(stepContext.Context);
+                                break;
+                            case "None":
+                                await MainResponses.ReplyWithConfused(stepContext.Context);
+                                await MainResponses.ReplyWithLuisScore(stepContext.Context, topintent.Value.intent, topintent.Value.score);
+                                break;
+                            case "Greeting":
+                                await MainResponses.ReplyWithGreeting(stepContext.Context);
+                                await MainResponses.ReplyWithHelp(stepContext.Context);
+                                await MainResponses.ReplyWithLuisScore(stepContext.Context, topintent.Value.intent, topintent.Value.score);
+                                break;
+                            case "OrderPic":
+                                await MainResponses.ReplyWithOrderConfirmation(stepContext.Context);
+                                await MainResponses.ReplyWithLuisScore(stepContext.Context, topintent.Value.intent, topintent.Value.score);
+                                break;
+                            case "SharePic":
+                                await MainResponses.ReplyWithShareConfirmation(stepContext.Context);
+                                await MainResponses.ReplyWithLuisScore(stepContext.Context, topintent.Value.intent, topintent.Value.score);
+                                break;
+                            case "SearchPic":
+                                await MainResponses.ReplyWithSearchConfirmation(stepContext.Context);
+                                await MainResponses.ReplyWithLuisScore(stepContext.Context, topintent.Value.intent, topintent.Value.score);
+                                break;
+                            default:
+                                await MainResponses.ReplyWithConfused(stepContext.Context);
+                                break;
+
+                        }
                         return await stepContext.EndDialogAsync();
                     }
             }

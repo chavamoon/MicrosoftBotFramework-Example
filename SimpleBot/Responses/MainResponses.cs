@@ -39,5 +39,10 @@ namespace SimpleBot.Responses
         {
             await context.SendActivityAsync($"Searching picture(s)...");
         }
+
+        public static async Task ReplyWithLuisScore(ITurnContext context, string key, double score)
+        {
+            await context.SendActivityAsync($"Intent: {key} ({score}).");
+        }
     }
 }

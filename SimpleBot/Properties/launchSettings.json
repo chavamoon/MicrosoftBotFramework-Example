@@ -13,10 +13,7 @@
       "commandName": "IISExpress",
       "launchBrowser": true,
       "environmentVariables": {
-        "LuisAppId": "80d5dc36-c45f-4f08-bb2d-f833eb41de0d",
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "LuisEndPoint": "https://luisslh.cognitiveservices.azure.com/",
-        "LuisAppKey": "4839fa3a0c9b42a5a5de8a6d9b77848c"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
     "EchoBot": {

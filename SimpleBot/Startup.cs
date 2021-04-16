@@ -6,15 +6,16 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.AI.Luis;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-
 using SimpleBot.Bots;
 using SimpleBot.Middleware;
 using System.Text.RegularExpressions;
+
 
 namespace SimpleBot
 {
@@ -60,6 +61,13 @@ namespace SimpleBot
                     DialogStateAccessor = conversationState.CreateProperty<DialogState>(nameof(DialogState)),
                 };
 
+            });
+
+            services.AddSingleton(sp => {
+                var luisapp = new LuisApplication(Configuration["LuisAppId"], Configuration["LuisAppKey"], Configuration["LuisEndPoint"]);
+                var recognizeropts = new LuisRecognizerOptionsV3(luisapp) 
+                { PredictionOptions = new Microsoft.Bot.Builder.AI.LuisV3.LuisPredictionOptions() { IncludeAllIntents = true } };
+                return new LuisRecognizer(recognizeropts);
             });
 
             //Configuring state
