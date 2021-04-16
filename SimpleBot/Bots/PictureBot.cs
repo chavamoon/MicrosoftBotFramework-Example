@@ -71,6 +71,7 @@ namespace SimpleBot.Bots
             var state = await _accessors.PictureBotState.GetAsync(turnContext, () => new PictureBotState());
             state.UtteranceList.Add(utterance);
             await _accessors.ConversationState.SaveChangesAsync(turnContext);
+            await base.OnTurnAsync(turnContext, cancellationToken);
         }
 
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
@@ -184,11 +185,11 @@ namespace SimpleBot.Bots
                                 await MainResponses.ReplyWithOrderConfirmation(stepContext.Context);
                                 await MainResponses.ReplyWithLuisScore(stepContext.Context, topintent.Value.intent, topintent.Value.score);
                                 break;
-                            case "SharePic":
+                            case "SharePics":
                                 await MainResponses.ReplyWithShareConfirmation(stepContext.Context);
                                 await MainResponses.ReplyWithLuisScore(stepContext.Context, topintent.Value.intent, topintent.Value.score);
                                 break;
-                            case "SearchPic":
+                            case "SearchPics":
                                 await MainResponses.ReplyWithSearchConfirmation(stepContext.Context);
                                 await MainResponses.ReplyWithLuisScore(stepContext.Context, topintent.Value.intent, topintent.Value.score);
                                 break;
