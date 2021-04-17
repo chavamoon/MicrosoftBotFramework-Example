@@ -3,6 +3,8 @@
 //
 // Generated with Bot Builder V4 SDK Template for Visual Studio EchoBot v4.12.2
 
+using Microsoft.Azure.CognitiveServices.Language.TextAnalytics;
+using Microsoft.Azure.CognitiveServices.Language.TextAnalytics.Models;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.AI.Luis;
 using Microsoft.Bot.Builder.Dialogs;
@@ -22,9 +24,9 @@ namespace SimpleBot.Bots
         private readonly ILogger _logger;
         private DialogSet _dialogs;
         private LuisRecognizer _recognizer { get; } = null;
+        private TextAnalyticsClient _textAnalyticsClient;
 
-
-        public PictureBot(PictureBotAccessors accessors, ILoggerFactory loggerFactory, LuisRecognizer recognizer)
+        public PictureBot(PictureBotAccessors accessors, ILoggerFactory loggerFactory, LuisRecognizer recognizer, TextAnalyticsClient textAnalyticsClient)
         {
           
             _logger = loggerFactory.CreateLogger<PictureBot>();
@@ -32,6 +34,7 @@ namespace SimpleBot.Bots
 
             // The DialogSet needs a DialogState accessor, it will call it when it has a turn context.
             _recognizer = recognizer;
+            _textAnalyticsClient = textAnalyticsClient;
             _accessors = accessors;
             _dialogs = new DialogSet(_accessors.DialogStateAccessor);
 
@@ -72,26 +75,53 @@ namespace SimpleBot.Bots
             state.UtteranceList.Add(utterance);
             await _accessors.ConversationState.SaveChangesAsync(turnContext);
             await base.OnTurnAsync(turnContext, cancellationToken);
-        }
-
-        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
-        {
             if (turnContext.Activity.Type is "message")
             {
-                // Establish dialog context from the conversation state.
-                var dc = await _dialogs.CreateContextAsync(turnContext);
-                // Continue any current dialog.
-                await dc.ContinueDialogAsync(cancellationToken);
-
-                // Every turn sends a response, so if no response was sent,
-                // then there no dialog is currently active.
-                if (!turnContext.Responded)
+                //Check the language
+                var detectedLanguage = await _textAnalyticsClient.DetectLanguageAsync(turnContext.Activity.Text,"MX");
+                var language = detectedLanguage.DetectedLanguages[0];
+                switch (language.Name)
                 {
-                    // Start the main dialog
-                    await dc.BeginDialogAsync("mainDialog", null, cancellationToken);
+                    case "English":
+                        // Establish dialog context from the conversation state.
+                        var dc = await _dialogs.CreateContextAsync(turnContext);
+                        // Continue any current dialog.
+                        var results = await dc.ContinueDialogAsync(cancellationToken);
+
+                        // Every turn sends a response, so if no response was sent,
+                        // then there no dialog is currently active.
+                        if (!turnContext.Responded)
+                        {
+                            // Start the main dialog
+                            await dc.BeginDialogAsync("mainDialog", null, cancellationToken);
+                        }
+                        break;
+                    default:
+                        //throw error
+                        await turnContext.SendActivityAsync($"I'm sorry, I can only understand English. [{language.Name}]");
+                        break;
                 }
             }
         }
+
+        //protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        //{
+        //    if (turnContext.Activity.Type is "message")
+        //    {
+        //        // Establish dialog context from the conversation state.
+        //        var dc = await _dialogs.CreateContextAsync(turnContext);
+        //        // Continue any current dialog.
+        //        await dc.ContinueDialogAsync(cancellationToken);
+
+        //        // Every turn sends a response, so if no response was sent,
+        //        // then there no dialog is currently active.
+        //        if (!turnContext.Responded)
+        //        {
+        //            // Start the main dialog
+        //            await dc.BeginDialogAsync("mainDialog", null, cancellationToken);
+        //        }
+        //    }
+        //}
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {

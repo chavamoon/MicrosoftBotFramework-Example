@@ -3,8 +3,11 @@
 //
 // Generated with Bot Builder V4 SDK Template for Visual Studio EchoBot v4.12.2
 
+using Azure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Azure.CognitiveServices.Language.LUIS.Runtime;
+using Microsoft.Azure.CognitiveServices.Language.TextAnalytics;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.AI.Luis;
 using Microsoft.Bot.Builder.Dialogs;
@@ -14,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SimpleBot.Bots;
 using SimpleBot.Middleware;
+using System;
 using System.Text.RegularExpressions;
 
 
@@ -63,11 +67,20 @@ namespace SimpleBot
 
             });
 
+
+            //LUIS
             services.AddSingleton(sp => {
                 var luisapp = new LuisApplication(Configuration["LuisAppId"], Configuration["LuisAppKey"], Configuration["LuisEndPoint"]);
                 var recognizeropts = new LuisRecognizerOptionsV3(luisapp) 
                 { PredictionOptions = new Microsoft.Bot.Builder.AI.LuisV3.LuisPredictionOptions() { IncludeAllIntents = true } };
                 return new LuisRecognizer(recognizeropts);
+            });
+
+            //Text analytics
+            services.AddSingleton<TextAnalyticsClient>(sp =>
+            {
+                ApiKeyServiceClientCredentials credentials = new ApiKeyServiceClientCredentials(Configuration["TextAnalyticsApiKey"]);
+                return new TextAnalyticsClient(credentials) { Endpoint = Configuration["TextAnalyticsEndpoint"] };
             });
 
             //Configuring state
